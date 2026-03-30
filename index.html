@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data Usage Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+        </svg>
+        <span>Data Usage Tracker</span>
+      </div>
+      <div class="header-actions">
+        <button id="btn-reset" class="btn btn-danger" title="Reset session data">Reset Session</button>
+        <button id="btn-refresh" class="btn btn-primary" title="Refresh statistics">Refresh</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <!-- Network status banner -->
+    <div id="network-banner" class="network-banner hidden"></div>
+
+    <!-- Summary cards -->
+    <section class="cards-grid">
+      <div class="card card-highlight">
+        <div class="card-icon card-icon-blue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+        </div>
+        <div class="card-body">
+          <p class="card-label">Session Data Used</p>
+          <p class="card-value" id="stat-total">0 B</p>
+          <p class="card-sub" id="stat-total-requests">0 requests</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-icon card-icon-green">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+        <div class="card-body">
+          <p class="card-label">Session Duration</p>
+          <p class="card-value" id="stat-duration">00:00:00</p>
+          <p class="card-sub" id="stat-start">Started just now</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-icon card-icon-purple">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+            <line x1="8" y1="21" x2="16" y2="21"/>
+            <line x1="12" y1="17" x2="12" y2="21"/>
+          </svg>
+        </div>
+        <div class="card-body">
+          <p class="card-label">Network Type</p>
+          <p class="card-value" id="stat-network-type">Unknown</p>
+          <p class="card-sub" id="stat-network-speed">–</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-icon card-icon-orange">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+          </svg>
+        </div>
+        <div class="card-body">
+          <p class="card-label">Avg. Transfer Rate</p>
+          <p class="card-value" id="stat-rate">0 KB/s</p>
+          <p class="card-sub" id="stat-rate-sub">since page load</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Data limit -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">Data Limit</h2>
+      </div>
+      <div class="limit-row">
+        <div class="limit-input-group">
+          <input id="limit-value" type="number" min="1" placeholder="Enter limit" class="input" />
+          <select id="limit-unit" class="select">
+            <option value="KB">KB</option>
+            <option value="MB" selected>MB</option>
+            <option value="GB">GB</option>
+          </select>
+          <button id="btn-set-limit" class="btn btn-primary">Set Limit</button>
+          <button id="btn-clear-limit" class="btn btn-secondary">Clear</button>
+        </div>
+        <div id="limit-status" class="limit-status hidden">
+          <div class="limit-bar-wrap">
+            <div id="limit-bar" class="limit-bar"></div>
+          </div>
+          <p id="limit-text" class="limit-text"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Resource breakdown -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">Resource Breakdown</h2>
+        <span class="badge" id="badge-resources">0</span>
+      </div>
+      <div class="breakdown-grid" id="breakdown-grid">
+        <!-- populated by JS -->
+      </div>
+    </section>
+
+    <!-- Bar chart -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">Usage by Type</h2>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="chart-canvas" width="800" height="220"></canvas>
+        <p id="chart-empty" class="chart-empty hidden">No resource data yet. Interact with the page to generate requests.</p>
+      </div>
+    </section>
+
+    <!-- Top resources table -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">Top Resources</h2>
+        <span class="badge" id="badge-top">0</span>
+      </div>
+      <div class="table-wrap">
+        <table class="table" id="resources-table">
+          <thead>
+            <tr>
+              <th>Resource</th>
+              <th>Type</th>
+              <th>Size</th>
+              <th>Duration</th>
+              <th>Protocol</th>
+            </tr>
+          </thead>
+          <tbody id="resources-tbody">
+            <tr id="empty-row">
+              <td colspan="5" class="empty-cell">No resources loaded yet.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- History section -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">Session History</h2>
+        <button id="btn-clear-history" class="btn btn-secondary btn-sm">Clear History</button>
+      </div>
+      <div id="history-list" class="history-list">
+        <p class="empty-cell">No history yet.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Data Usage Tracker &mdash; uses the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Performance_API" target="_blank" rel="noopener">Performance API</a> &amp; <a href="https://developer.mozilla.org/en-US/docs/Web/API/Network_Information_API" target="_blank" rel="noopener">Network Information API</a></p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
